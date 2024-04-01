@@ -12,7 +12,7 @@ func main() {
 	proxy.Verbose = true
 
 	err := http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", proxy)
-	if err != nil && errors.Is(http.ErrServerClosed, err) {
+	if err != nil && !errors.Is(http.ErrServerClosed, err) {
 		log.Fatalf(err.Error())
 	}
 }

@@ -11,7 +11,7 @@ func main() {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = true
 
-	err := http.ListenAndServe(":8080", proxy)
+	err := http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", proxy)
 	if err != nil && errors.Is(http.ErrServerClosed, err) {
 		log.Fatalf(err.Error())
 	}

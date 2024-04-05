@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"strings"
 )
 
 type Config struct {
@@ -95,17 +96,18 @@ func wrapProxy(proxy *goproxy.ProxyHttpServer, config Config) *ProxyWrapper {
 }
 
 func (p *ProxyWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	p.logger.Info("Got HTTP request", zap.String("method", r.Method), zap.String("url", r.URL.String()), zap.String("ip", r.RemoteAddr))
+	clientIP := strings.Split(r.RemoteAddr, ":")[0]
+	p.logger.Info("Got HTTP request", zap.String("method", r.Method), zap.String("url", r.URL.String()), zap.String("ip", clientIP), zap.String("remote_addr", r.RemoteAddr))
 
 	if p.config.IPWhitelist != nil {
-		if !slices.Contains(p.config.IPWhitelist, r.RemoteAddr) {
-			p.logger.Info("Client doesn't contains in IP whitelist", zap.String("ip", r.RemoteAddr))
+
+		if !slices.Contains(p.config.IPWhitelist, clientIP) {
+			p.logger.Info("Client doesn't contains in IP whitelist", zap.String("ip", clientIP))
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 	}
 
-	p.logger.Info("Client was verified", zap.String("ip", r.RemoteAddr))
+	p.logger.Info("Client was verified", zap.String("ip", clientIP))
 	p.proxy.ServeHTTP(w, r)
 }

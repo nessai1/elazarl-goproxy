@@ -3,16 +3,43 @@ package main
 import (
 	"errors"
 	"github.com/elazarl/goproxy"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 )
 
-func main() {
-	proxy := goproxy.NewProxyHttpServer()
-	proxy.Verbose = true
+type Config struct {
+	Address string
 
-	err := http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", proxy)
+	Login    string
+	Password string
+}
+
+func main() {
+	proxy := wrapProxy(goproxy.NewProxyHttpServer())
+
+	err := http.ListenAndServe(":8080", proxy)
 	if err != nil && !errors.Is(http.ErrServerClosed, err) {
 		log.Fatalf(err.Error())
 	}
+}
+
+type ProxyWrapper struct {
+	proxy  *goproxy.ProxyHttpServer
+	logger *zap.Logger
+}
+
+func wrapProxy(proxy *goproxy.ProxyHttpServer) *ProxyWrapper {
+	wrapper := ProxyWrapper{
+		proxy:  proxy,
+		logger: nil,
+	}
+
+	proxy.Verbose = true
+
+	return &wrapper
+}
+
+func (p *ProxyWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.proxy.ServeHTTP(w, r)
 }
